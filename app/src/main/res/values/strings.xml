@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ReignDesignTestApp</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="Title">Title</string>
+    <string name="Author">Author-CreatedAt</string>
+</resources>

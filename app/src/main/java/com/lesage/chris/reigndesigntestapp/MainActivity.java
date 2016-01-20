@@ -9,6 +9,7 @@ import android.net.NetworkInfo;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Toast;
@@ -137,6 +138,18 @@ public class MainActivity extends AppCompatActivity {
                 }
                 // false : close the menu; true : not close the menu
                 return false;
+            }
+        });
+        swipeMenuListView.setOnSwipeListener(new SwipeMenuListView.OnSwipeListener() {
+            @Override
+            public void onSwipeStart(int position) {
+                // swipe start
+                swipeRefreshLayout.setEnabled(false);
+            }
+            @Override
+            public void onSwipeEnd(int position) {
+                // swipe end
+                swipeRefreshLayout.setEnabled(true);
             }
         });
     }

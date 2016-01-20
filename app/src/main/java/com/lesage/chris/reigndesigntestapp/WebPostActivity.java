@@ -9,9 +9,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.MenuItem;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.TextView;
 import android.widget.Toast;
 
 /**
@@ -38,6 +38,9 @@ public class WebPostActivity extends AppCompatActivity {
         Intent activityThatCalled = getIntent();
         String url = activityThatCalled.getExtras().getString("url");
 
+        //Keep track of most current post time
+        Long mostCurrentPostTime = activityThatCalled.getLongExtra("currentTime", 1000000000);
+        activityThatCalled.putExtra("currentTime", mostCurrentPostTime);
 
         setUpWebView(url);
     }
@@ -58,6 +61,7 @@ public class WebPostActivity extends AppCompatActivity {
                 view.loadUrl(url);
                 return true;
             }
+
             @Override
             public void onPageFinished(WebView view, final String url) {
                 progDailog.dismiss();
@@ -71,5 +75,20 @@ public class WebPostActivity extends AppCompatActivity {
                 = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+        }
+        return(super.onOptionsItemSelected(item));
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
     }
 }

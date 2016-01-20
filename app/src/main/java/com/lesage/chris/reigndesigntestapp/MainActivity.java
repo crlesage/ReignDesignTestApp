@@ -53,8 +53,8 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Hits> hits;
     Gson gsonSave = new Gson();
 
-    //Start the current time to be MAX, so it will set most current post value, the minimum of all posts.
-    long mostCurrentPostTime = Long.MAX_VALUE;
+    //Start the current time to be very big (5245 days ago), so it will set most current post value, the minimum of all posts.
+    long mostCurrentPostTime = 1000000000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
                 if(!isNetworkAvailable()) {
                     getSavedData();
                     displayData();
-                } else{
+                } else {
                     getJsonData();
                     saveData();
                 }
@@ -128,10 +128,9 @@ public class MainActivity extends AppCompatActivity {
         swipeMenuListView = (SwipeMenuListView) findViewById(R.id.listView);
         swipeMenuListView.setOnMenuItemClickListener(new SwipeMenuListView.OnMenuItemClickListener() {
             @Override
-            public boolean onMenuItemClick(int position, SwipeMenu menu, int index) {
+            public boolean onMenuItemClick(final int position, SwipeMenu menu, int index) {
                 switch (index) {
                     case 0:
-                        // open
                         hits.remove(hitsAdapter.getItem(position));
                         hitsAdapter.removeItem(position);
                         break;
@@ -195,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
         hits.clear();
 
         hits = savedHits;
-        mostCurrentPostTime = prefs.getLong("currentTime", 700);
+        mostCurrentPostTime = prefs.getLong("currentTime", 1000000000);
     }
 
     /* ------------------- VIEW WEB CALL ----------------------  */
@@ -213,6 +212,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             intentPreferences.putExtra("url", hit.getUrl());
         }
+        intentPreferences.putExtra("currentTime", mostCurrentPostTime);
         startActivityForResult(intentPreferences, WEB_POST);
     }
 
@@ -222,6 +222,14 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode){
             case 1: //webPost
+                //mostCurrentPostTime = data.getLongExtra("currentTime", 1000000000);
+//                if(!isNetworkAvailable()) {
+//                    getSavedData();
+//                    displayData();
+//                } else{
+//                    getJsonData();
+//                    saveData();
+//                }
                 break;
         }
     }
@@ -252,12 +260,12 @@ public class MainActivity extends AppCompatActivity {
                 JsonData results = response.body();
                 if(hits.size() <= 0) {
                     hits = results.getHits();
+                    initializeCurrentPostTime();
                 }
                 else {
                     saveNewHits(results.getHits());
                 }
                 Log.d("myapp", "Got data");
-                updateNewestPostTime();
                 displayData();
             }
 
@@ -269,21 +277,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /* Updates the newest Post time to only add new posts to the listview */
-    public void updateNewestPostTime(){
+    public void initializeCurrentPostTime(){
+        Log.d("myapp", "time " + getTimeAgo(mostCurrentPostTime));
         for(Hits hit : hits){
-            if(hit.getCreated_at_i() < mostCurrentPostTime){
-                Log.d("myapp", "new current time");
+            if(hit.created_at_i > mostCurrentPostTime){
                 mostCurrentPostTime = hit.getCreated_at_i();
             }
         }
+        Log.d("myapp", "new current time: " + getTimeAgo(mostCurrentPostTime));
     }
 
     /* Only update the hits if they are "new" */
     public void saveNewHits(ArrayList<Hits> newHits){
         for(Hits hit : newHits){
-            if(hit.created_at_i < mostCurrentPostTime){
+            if(hit.created_at_i > mostCurrentPostTime){
                 Log.d("myapp", "Added new hit");
-                hits.add(hit);
+                hits.add(0, hit);
+                hitsAdapter.notifyDataSetChanged();
+                mostCurrentPostTime = hit.created_at_i;
+                Log.d("myapp", "new time: " + getTimeAgo(mostCurrentPostTime));
             }
         }
     }
@@ -294,6 +306,41 @@ public class MainActivity extends AppCompatActivity {
                 = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+
+
+
+    private static final int SECOND_MILLIS = 1000;
+    private static final int MINUTE_MILLIS = 60 * SECOND_MILLIS;
+    private static final int HOUR_MILLIS = 60 * MINUTE_MILLIS;
+    private static final int DAY_MILLIS = 24 * HOUR_MILLIS;
+
+    public static String getTimeAgo(long time) {
+        if (time < 1000000000000L) {
+            // if timestamp given in seconds, convert to millis
+            time *= 1000;
+        }
+
+        long now = System.currentTimeMillis();
+        if (time > now || time <= 0) {
+            return "time";
+        }
+
+        final long diff = now - time;
+        if (diff < MINUTE_MILLIS) {
+            return "just now";
+        } else if (diff < 50 * MINUTE_MILLIS) {
+            return diff / MINUTE_MILLIS + "m";
+        } else if (diff < 90 * MINUTE_MILLIS) {
+            return "1h";
+        }else if (diff < 24 * HOUR_MILLIS) {
+            return diff / HOUR_MILLIS + "h";
+        } else if (diff < 48 * HOUR_MILLIS) {
+            return "yesterday";
+        } else {
+            return diff / DAY_MILLIS + "d";
+        }
     }
 
 }
